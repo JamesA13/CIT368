@@ -1,6 +1,7 @@
 import requests
 
 api_key = 'Insert your API key here'
+new_var = 'This is a new variable'
 
 user_input = input("Enter a 5-digit ZIP Code: ")
 
