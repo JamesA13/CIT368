@@ -1,13 +1,15 @@
 import requests
+import config
+import valid
 
-api_key = 'Insert your API key here'
-new_var = 'This is a new variable'
+api_key = config.key
 
 user_input = input("Enter a 5-digit ZIP Code: ")
+while (not valid.validate_zip(user_input)):
+    user_input = input("Input error. Please enter a ZIP in the format of #####: ")
 
 weather_forecast = requests.get(
     f"https://api.tomorrow.io/v4/weather/forecast?location={user_input}%20US&units=imperial&apikey={api_key}"
-
 )
 
 def weather_code(code):
