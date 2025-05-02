@@ -1,16 +1,34 @@
 import requests
 import config
-import valid
+from valid import Valid
+import time
+import sys
 
-api_key = config.key
+def get_zip():
+    user_input = input("Enter a 5-digit ZIP Code: ")
+    while (not Valid.validate_zip(user_input)):
+        user_input = input("Input error. Please enter a ZIP in the format of #####: ")
+    return user_input
 
-user_input = input("Enter a 5-digit ZIP Code: ")
-while (not valid.validate_zip(user_input)):
-    user_input = input("Input error. Please enter a ZIP in the format of #####: ")
+def get_weather(zip, key):
+    #Initial request from API
+    print("Fetching weather forecast...")
+    forecast = requests.get(
+        f"https://api.tomorrow.io/v4/weather/forecast?location={zip}%20US&units=imperial&apikey={key}"
+    )
 
-weather_forecast = requests.get(
-    f"https://api.tomorrow.io/v4/weather/forecast?location={user_input}%20US&units=imperial&apikey={api_key}"
-)
+    #Verify response from API and retry connection up to 3 additional times before quitting with an error msg
+    retry = 0
+    while(not Valid.validate_response_code(forecast.status_code) and retry < 3):
+        forecast = requests.get(
+            f"https://api.tomorrow.io/v4/weather/forecast?location={zip}%20US&units=imperial&apikey={key}"
+        )
+        time.sleep(1)
+        retry += 1
+    if(retry > 2):
+        print("API Error. Please verify your ZIP code and API Key, or contact an administrator.\nExiting program...")
+        sys.exit()
+    return forecast
 
 def weather_code(code):
     match code:
@@ -40,11 +58,14 @@ def weather_code(code):
         case 8000:  return "Thunderstorm"
         case _:     return "Unknown"
 
+zip_code = get_zip()
+
+user_forecast = get_weather(zip_code, config.key)
 
 for i in range(0, 3):
-    conditions = weather_forecast.json()["timelines"]["daily"][i]["values"]["weatherCodeMax"]
-    max_temp = str(weather_forecast.json()["timelines"]["daily"][i]["values"]["temperatureMax"])
-    min_temp = str(weather_forecast.json()["timelines"]["daily"][i]["values"]["temperatureMin"])
+    conditions = user_forecast.json()["timelines"]["daily"][i]["values"]["weatherCodeMax"]
+    max_temp = str(user_forecast.json()["timelines"]["daily"][i]["values"]["temperatureMax"])
+    min_temp = str(user_forecast.json()["timelines"]["daily"][i]["values"]["temperatureMin"])
     if i == 0:
         print("Today's weather is: " + weather_code(conditions) + ", with a high of " + max_temp + " degrees and low of " + min_temp + " degrees.")
     elif i == 1:
