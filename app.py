@@ -2,7 +2,7 @@ import requests
 import config
 from valid import Valid
 import time
-import sys
+from log import Log
 
 def get_zip():
     user_input = input("Enter a 5-digit ZIP Code: ")
@@ -11,24 +11,31 @@ def get_zip():
     return user_input
 
 def get_weather(zip, key):
-    #Initial request from API
     print("Fetching weather forecast...")
+    time.sleep(1) # Enforce a 1-second wait before any request to avoid rate-limiting the user
     forecast = requests.get(
         f"https://api.tomorrow.io/v4/weather/forecast?location={zip}%20US&units=imperial&apikey={key}"
     )
-
-    #Verify response from API and retry connection up to 3 additional times before quitting with an error msg
-    retry = 0
-    while(not Valid.validate_response_code(forecast.status_code) and retry < 3):
-        forecast = requests.get(
-            f"https://api.tomorrow.io/v4/weather/forecast?location={zip}%20US&units=imperial&apikey={key}"
-        )
-        time.sleep(1)
-        retry += 1
-    if(retry > 2):
-        print("API Error. Please verify your ZIP code and API Key, or contact an administrator.\nExiting program...")
-        sys.exit()
     return forecast
+    
+def print_forecast(forecast):
+    print("Today's weather is: " + 
+        weather_code(forecast.json()["timelines"]["daily"][0]["values"]["weatherCodeMax"]) # Weather conditions code passed through the interpreting method
+        + ", with a high of " + str(forecast.json()["timelines"]["daily"][0]["values"]["temperatureMax"]) # Max Temp of the day
+        + " degrees and low of " + str(forecast.json()["timelines"]["daily"][0]["values"]["temperatureMin"]) # Min Temp of the day
+        + " degrees.")
+    
+    print("Tomorrow's weather is: " +  
+        weather_code(forecast.json()["timelines"]["daily"][1]["values"]["weatherCodeMax"])
+        + ", with a high of " + str(forecast.json()["timelines"]["daily"][1]["values"]["temperatureMax"])
+        + " degrees and low of " + str(forecast.json()["timelines"]["daily"][1]["values"]["temperatureMin"])
+        + " degrees.")
+    
+    print("Overmorrow's weather is: " + 
+        weather_code(forecast.json()["timelines"]["daily"][2]["values"]["weatherCodeMax"])
+        + ", with a high of " + str(forecast.json()["timelines"]["daily"][2]["values"]["temperatureMax"])
+        + " degrees and low of " + str(forecast.json()["timelines"]["daily"][2]["values"]["temperatureMin"]) 
+        + " degrees.")
 
 def weather_code(code):
     match code:
@@ -58,18 +65,25 @@ def weather_code(code):
         case 8000:  return "Thunderstorm"
         case _:     return "Unknown"
 
+##################################
+
+key = config.key
 zip_code = get_zip()
+user_forecast = get_weather(zip_code, key)
 
-user_forecast = get_weather(zip_code, config.key)
-
-for i in range(0, 3):
-    conditions = user_forecast.json()["timelines"]["daily"][i]["values"]["weatherCodeMax"]
-    max_temp = str(user_forecast.json()["timelines"]["daily"][i]["values"]["temperatureMax"])
-    min_temp = str(user_forecast.json()["timelines"]["daily"][i]["values"]["temperatureMin"])
-    if i == 0:
-        print("Today's weather is: " + weather_code(conditions) + ", with a high of " + max_temp + " degrees and low of " + min_temp + " degrees.")
-    elif i == 1:
-        print("Tomorrow's weather is: " + weather_code(conditions) + ", with a high of " + max_temp + " degrees and low of " + min_temp + " degrees.")
-    elif i == 2:
-        print("Overmorrow's weather is: " + weather_code(conditions) + ", with a high of " + max_temp + " degrees and low of " + min_temp + " degrees.")
-    i += 1
+# Verify response from API and retry connection up to 3 additional times before quitting with an error msg
+if(Valid.validate_response_code(user_forecast.status_code)):
+    print_forecast(user_forecast)
+    Log.log(zip_code, user_forecast.status_code)
+else:
+    retry = 1
+    while(not Valid.validate_response_code(user_forecast.status_code) and retry < 3):
+        print("API error. Retrying...")
+        user_forecast = get_weather(zip_code, key)
+        retry += 1
+    if(Valid.validate_response_code(user_forecast.status_code)):
+        print_forecast(user_forecast)
+        Log.log(zip_code, user_forecast.status_code)
+    else:
+        print("API Error. Please verify your ZIP code and API Key, or contact an administrator.\nTo avoid rate-limiting your API key, the program will now exit.")
+        Log.log(zip_code, user_forecast.status_code)
