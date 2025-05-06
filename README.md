@@ -13,11 +13,11 @@ Some of the testing of this application involved the use of the "Big List of Nau
 The downloaded file resides in the same directory as app.py and is renamed from "blns.txt" to "blns.payloads"
 
 Additonal imported Python packages include:<br/>
-requests
-time
-datetime
-re
-unittests
+requests<br/>
+time<br/>
+datetime<br/>
+re<br/>
+unittests<br/>
 
 Scanning this project with Bearer SAST revealed 0 failures in 88 checks.
 
