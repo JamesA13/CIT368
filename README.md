@@ -12,6 +12,15 @@ Requests per day: 500<br/>
 Some of the testing of this application involved the use of the "Big List of Naughty Strings", a repository owned by user "minimaxir" at https://github.com/minimaxir/big-list-of-naughty-strings<br/>
 The downloaded file resides in the same directory as app.py and is renamed from "blns.txt" to "blns.payloads"
 
+Additonal imported Python packages include:<br/>
+requests
+time
+datetime
+re
+unittests
+
+Scanning this project with Bearer SAST revealed 0 failures in 88 checks.
+
 Use of this application requires the creation of "config.py" in the same directory as app.py<br/>
 Within "config.py" live the following variables:<br/>
     key : string - a string representation of your API key from https://www.tomorrow.io
